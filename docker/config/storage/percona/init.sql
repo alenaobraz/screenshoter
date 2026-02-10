@@ -1,4 +1,4 @@
-CREATE DATABASE IF NOT EXISTS localserver;
+CREATE DATABASE IF NOT EXISTS screenshoter;
 DROP USER IF EXISTS 'user'@'%';
 CREATE USER 'user'@'%' IDENTIFIED BY 'password';
 GRANT ALL ON *.* TO 'user'@'%';
