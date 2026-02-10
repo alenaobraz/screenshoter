@@ -29,7 +29,7 @@ use Symfony\Component\Uid\Uuid;
             denormalizationContext: ['groups' => ['job:create']],
             normalizationContext: ['groups' => ['job:read']],
             read: false,
-            //processor: 'App\State\JobProcessor',
+            processor: 'App\State\JobProcessor',
             validationContext: ['groups' => ['create']]
         ),
         new Delete()

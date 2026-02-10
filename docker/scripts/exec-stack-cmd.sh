@@ -4,6 +4,8 @@ compose_services=(
     "percona"
     "edge"
     "php-fpm"
+    "rabbitmq"
+    "worker"
 )
 
 execute_docker_command() {

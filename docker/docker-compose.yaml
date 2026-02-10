@@ -1,6 +1,7 @@
 services:
   percona:
     image: ${PERCONA_IMAGE}
+    container_name: screenshoter-percona
     command: mysqld --character-set-server=utf8mb4 --collation-server=utf8mb4_unicode_ci --init-file /init.sql
     hostname: "percona-{{.Node.Hostname}}"
     ports:
@@ -19,6 +20,7 @@ services:
 
   edge:
     image: ${NGINX_IMAGE}
+    container_name: screenshoter-edge
     hostname: "nginx-{{.Node.Hostname}}"
     ports:
       - "80:80"
@@ -32,6 +34,7 @@ services:
 
   php-fpm:
     image: ${PHPFPM_IMAGE}
+    container_name: screenshoter-php-fpm
     hostname: "php-fpm-{{.Node.Hostname}}-{{.Task.Slot}}"
     networks:
       - screenshoter
@@ -44,6 +47,47 @@ services:
       - ../webapp:/opt/webapp
       - ./var/storage/php-fpm/var:/opt/webapp/var
 
+  rabbitmq:
+    image: rabbitmq:3-management-alpine
+    container_name: screenshoter-rabbitmq
+    hostname: rabbitmq
+    ports:
+      - "5672:5672"    # AMQP
+      - "15672:15672"  # Web UI: http://localhost:15672 (логин: guest / пароль: guest)
+    networks:
+      - screenshoter
+    volumes:
+      - ./var/rabbitmq/data:/var/lib/rabbitmq:rw
+      - ./var/rabbitmq/log:/var/log/rabbitmq:rw
+    environment:
+      RABBITMQ_DEFAULT_USER: ${RABBITMQ_USER:-guest}
+      RABBITMQ_DEFAULT_PASS: ${RABBITMQ_PASS:-guest}
+    healthcheck:
+      test: [ "CMD", "rabbitmq-diagnostics", "ping" ]
+      interval: 10s
+      timeout: 10s
+      retries: 5
+
+  worker:
+    image: ${PHPFPM_IMAGE}
+    container_name: screenshoter-worker
+    hostname: "worker-{{.Node.Hostname}}-{{.Task.Slot}}"
+    networks:
+      - screenshoter
+    volumes:
+      - ./config/php-fpm/php-fpm.d/php-fpm.conf:/usr/local/etc/php-fpm.d/php-fpm.conf:ro
+      - ./config/php-fpm/php-fpm.d/www.conf:/usr/local/etc/php-fpm.d/www.conf:ro
+      - ./config/php-fpm/php.ini:/usr/local/etc/php/php.ini:ro
+      - ./var/log/php-fpm:/var/log/php-fpm
+      - ../webapp:/opt/webapp
+      - ./var/storage/php-fpm/var:/opt/webapp/var
+    environment:
+      MESSENGER_TRANSPORT_DSN: amqp://${RABBITMQ_USER:-guest}:${RABBITMQ_PASS:-guest}@rabbitmq:5672/%2f/messages
+      DATABASE_URL: mysql://${MYSQL_USER}:${MYSQL_PASSWORD}@percona:3306/${MYSQL_DATABASE}?serverVersion=8.0
+    depends_on:
+      rabbitmq:
+        condition: service_healthy
+    command: php /opt/webapp/bin/console messenger:consume async -vv
 
 networks:
   screenshoter:
