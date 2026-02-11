@@ -84,10 +84,34 @@ services:
     environment:
       MESSENGER_TRANSPORT_DSN: amqp://${RABBITMQ_USER:-guest}:${RABBITMQ_PASS:-guest}@rabbitmq:5672/%2f/messages
       DATABASE_URL: mysql://${MYSQL_USER}:${MYSQL_PASSWORD}@percona:3306/${MYSQL_DATABASE}?serverVersion=8.0
+      SCREENSHOT_SERVICE_URL: http://screenshoter:8080
+      SCREENSHOT_API_KEY: secret123
     depends_on:
       rabbitmq:
         condition: service_healthy
     command: php /opt/webapp/bin/console messenger:consume async -vv
+
+  screenshoter:
+    image: ${PHPCLI_SCREENSHOTER_IMAGE}
+    container_name: screenshoter-screenshoter
+    ports:
+      - "8080:8080"
+    environment:
+      - SCREENSHOT_API_KEY=secret123
+      - PUPPETEER_SKIP_DOWNLOAD=false
+    cap_add:
+      - SYS_ADMIN
+    security_opt:
+      - seccomp:unconfined
+    volumes:
+      # Монтируем ТОЛЬКО исходники PHP, кроме vendor/
+      - ../screenshoter/src:/app/src
+      - ../screenshoter/public:/app/public
+      # Папка для скриншотов
+      - ./var/screenshots:/app/public/screenshots
+    networks:
+      - screenshoter
+
 
 networks:
   screenshoter:

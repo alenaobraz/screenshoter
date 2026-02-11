@@ -6,6 +6,7 @@ compose_services=(
     "php-fpm"
     "rabbitmq"
     "worker"
+    "screenshoter"
 )
 
 execute_docker_command() {
