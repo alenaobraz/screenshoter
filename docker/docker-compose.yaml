@@ -112,6 +112,25 @@ services:
     networks:
       - screenshoter
 
+  comparator:
+    image: ${PHPCLI_COMPARATOR_IMAGE}
+    container_name: screenshoter-comparator
+    ports:
+      - "8081:8081"
+    environment:
+      - DIFF_SERVICE_API_KEY=secret456
+    volumes:
+      # Монтируем исходники PHP
+      - ../comparator/public:/app/public
+      # Папка для различий
+      - ./var/diffs:/app/public/diffs
+    networks:
+      - screenshoter
+    healthcheck:
+      test: [ "CMD", "curl", "-f", "http://localhost:8081" ]
+      interval: 30s
+      timeout: 10s
+      retries: 3
 
 networks:
   screenshoter:

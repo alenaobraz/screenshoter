@@ -38,14 +38,14 @@ class ProcessJobHandler
                 $afterScreenshot = $this->takeScreenshot($pair['after'], $job->getOptions());
 
                 // Шаг 2: Сравнить
-                //$diffResult = $this->compareScreenshots($beforeScreenshot, $afterScreenshot, $job->getOptions());
+                $diffResult = $this->compareScreenshots($beforeScreenshot, $afterScreenshot, $job->getOptions());
 
                 $results[] = [
                     'beforeScreenshot' => $beforeScreenshot,
                     'afterScreenshot' => $afterScreenshot,
-                    //'urls' => $pair,
-                    //'difference_percent' => $diffResult['percent'],
-                    //'diff_image_url' => $diffResult['image_url'],
+                    'urls' => $pair,
+                    'difference_percent' => $diffResult['percent'],
+                    'diff_image_url' => $diffResult['image_url'],
                 ];
 
                 // Сохранить результат
@@ -98,14 +98,37 @@ class ProcessJobHandler
 
     private function compareScreenshots(string $img1, string $img2, array $options): array
     {
-        $response = $this->client->request('POST', $_ENV['DIFF_SERVICE_URL'] . '/compare', [
-            'json' => [
-                'image1' => $img1,
-                'image2' => $img2,
-                'threshold' => $options['threshold'] ?? 0.1,
-            ],
+        $this->logger->info('Comparing screenshots', [
+            'image1' => $img1,
+            'image2' => $img2,
+            'threshold' => $options['threshold'] ?? 0.1,
         ]);
 
-        return $response->toArray();
+        try {
+            $response = $this->client->request('POST', $_ENV['DIFF_SERVICE_URL'], [
+                'headers' => [
+                    'X-Api-Key' => $_ENV['DIFF_SERVICE_API_KEY'] ?? null,
+                ],
+                'json' => [
+                    'image1' => $img1,
+                    'image2' => $img2,
+                    'threshold' => $options['threshold'] ?? 0.1,
+                ],
+                'timeout' => 60.0,
+            ]);
+
+            $data = $response->toArray();
+            $this->logger->info('Diff result', $data);
+
+            return $data;
+        } catch (\Exception $e) {
+            $this->logger->error('Diff request failed', [
+                'image1' => $img1,
+                'image2' => $img2,
+                'message' => $e->getMessage(),
+                'response' => $e->getCode() >= 400 && $e->getResponse() ? $e->getResponse()->getContent(false) : null,
+            ]);
+            throw $e;
+        }
     }
 }

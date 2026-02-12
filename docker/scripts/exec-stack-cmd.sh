@@ -7,6 +7,7 @@ compose_services=(
     "rabbitmq"
     "worker"
     "screenshoter"
+    "comparator"
 )
 
 execute_docker_command() {
