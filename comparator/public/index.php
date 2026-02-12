@@ -95,27 +95,11 @@ $fuzz = $threshold * $quantum;
 $img1->setOption('fuzz', $fuzz);
 
 try {
-    [$diff, $metric] = $img1->compareImages($img2, \Imagick::METRIC_MEANSQUAREERROR);
-    file_put_contents('php://stderr', "DEBUG: Compared, metric: $metric\n", FILE_APPEND);
+    [$diff, $differentPixels] = $img1->compareImages($img2, \Imagick::METRIC_ABSOLUTEERRORMETRIC);
 
     $width = $img1->getImageWidth();
     $height = $img1->getImageHeight();
     $totalPixels = $width * $height;
-    $differentPixels = 0;
-
-    try {
-        $diff->evaluateImage(2, 0);
-        $pixels = $diff->exportImagePixels(0, 0, $width, $height, 'I', \Imagick::PIXEL_CHAR);
-        foreach ($pixels as $pixel) {
-            if ($pixel > 0) {
-                $differentPixels++;
-            }
-        }
-        file_put_contents('php://stderr', "DEBUG: Pixel comparison done: $differentPixels / $totalPixels\n", FILE_APPEND);
-    } catch (\Exception $e) {
-        file_put_contents('php://stderr', "WARNING: exportImagePixels failed: " . $e->getMessage() . "\n", FILE_APPEND);
-        $differentPixels = (int)($totalPixels * 0.95);
-    }
 
     $percent = $totalPixels > 0 ? round(($differentPixels / $totalPixels) * 100, 2) : 0;
 
@@ -176,7 +160,6 @@ try {
         'image_url' => '/diffs/' . basename($filepath),
         'threshold' => $threshold,
         'is_different' => $percent >= ($threshold * 100),
-        'metric' => $metric,
         'method' => 'overlay_diff',
         'different_pixels' => $differentPixels,
         'total_pixels' => $totalPixels,
