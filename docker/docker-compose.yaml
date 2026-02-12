@@ -31,6 +31,8 @@ services:
       - ./config/edge/conf.d:/etc/nginx/conf.d
       - ../webapp:/opt/webapp
       - ./var/log/edge/nginx:/var/log/nginx
+      - ./var/diffs:/var/diffs
+      - ./var/screenshots:/var/screenshots
 
   php-fpm:
     image: ${PHPFPM_IMAGE}
