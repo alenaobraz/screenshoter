@@ -137,7 +137,7 @@ try {
 
     // Сохраняем
     $filename = 'diff-' . time() . '-' . substr(md5($image1Url . $image2Url), 0, 8) . '.png';
-    $diffsDir = $_ENV['DIFFS_DIR'] ?? '/app/public/diffs';
+    $diffsDir = '/app/public/diffs';
     if (!is_dir($diffsDir)) {
         mkdir($diffsDir, 0777, true);
     }

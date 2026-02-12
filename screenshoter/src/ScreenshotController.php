@@ -8,7 +8,7 @@ class ScreenshotController
 
     public function __construct()
     {
-        $this->screenshotsDir = $_ENV['SCREENSHOTS_DIR'] ?? '/app/public/screenshots';
+        $this->screenshotsDir = '/app/public/screenshots';
         if (!is_dir($this->screenshotsDir)) {
             mkdir($this->screenshotsDir, 0777, true);
         }
